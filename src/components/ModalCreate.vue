@@ -148,8 +148,7 @@ export default {
         'Other',
       ],
       form: {
-        token:
-          '2337620625.1636668251329.22f91c789195ea7707dc5afbc31245c060137303b6322eabd26a6c1dee0dae80',
+        token: '',
         room_id: this.roomId || 0,
         start: '',
         end: '',
@@ -172,6 +171,7 @@ export default {
     },
     onSubmit() {
       this.isLoading = true
+      this.form.token = localStorage.getItem('booking-token')
       fetch('https://booking.congcu.org/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),

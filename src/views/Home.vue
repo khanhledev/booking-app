@@ -84,8 +84,8 @@
               <button
                 class="bg-blue-500 text-white font-medium p-3 rounded-lg w-full"
                 @click="onClick(listMeeting.id)"
-                >Booking</button
-              >
+                >Booking
+              </button>
             </footer>
           </article>
         </div>
@@ -116,6 +116,7 @@ export default {
       listMeetings: [],
       fetching: true,
       time: [],
+      token: '',
     }
   },
   computed: {
@@ -141,16 +142,27 @@ export default {
     this.time = listTime('00:00', '23:30', '00:30', 0)
     this.fetch()
   },
+  beforeCreate() {
+    let token = localStorage.getItem('booking-token')
+
+    if (!token) {
+      this.$router.push({ path: '/' })
+      return
+    }
+
+    localStorage.setItem('booking-token', token)
+  },
   methods: {
     async fetch() {
       this.fetching = true
-      await fetch(
-        'https://booking.congcu.org/api/room.php?type=list&token=2337620625.1636668251329.22f91c789195ea7707dc5afbc31245c060137303b6322eabd26a6c1dee0dae80'
-      ).then((response) => {
-        response.json().then((data) => {
-          this.listMeetings = data.data
-        })
-      })
+      const token = localStorage.getItem('booking-token')
+      await fetch(`https://booking.congcu.org/api/room.php?type=list&token=${token}`).then(
+        (response) => {
+          response.json().then((data) => {
+            this.listMeetings = data.data
+          })
+        }
+      )
       this.fetching = false
     },
     onClick(value) {
