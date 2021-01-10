@@ -2,50 +2,61 @@
   <main
     class="antialiased bg-gray-200 bg-opacity-75 text-gray-900 font-sans overflow-x-hidden fixed top-0 left-0 w-full"
   >
-    <div
-      class="relative px-4 min-h-screen md:flex md:items-center md:justify-center"
-    >
-      <div
-        class="modal-overlay w-full h-full absolute z-10 inset-0"
-        @click="onClose"
-      ></div>
+    <div class="relative px-4 min-h-screen md:flex md:items-center md:justify-center">
+      <div class="modal-overlay w-full h-full absolute z-10 inset-0" @click="onClose"></div>
       <div
         class="bg-white rounded-lg w-full md:max-w-screen-sm md:mx-auto p-8 fixed inset-x-0 bottom-0 z-50 mb-4 mx-4 md:relative"
       >
         <h2 class="text-center font-semibold text-2xl mb-6"
-          >Finish booking meeting room -
+          >Complete booking meeting room -
           {{ roomId !== 0 ? roomId + 3 + 'th Floor' : roomId + 3 + 'rd Floor' }}
         </h2>
         <div class="md:flex items-center">
-          <form class="contact-form w-full" autocomplete="off"
+          <form class="contact-form w-full" autocomplete="off" @submit.prevent="onSubmit"
             ><div class="contact-form-group mb-6">
               <p class="font-semibold mb-2">Your name:</p>
               <input
                 id="name"
+                v-model="form.token"
                 type="text"
                 required
                 class="py-2 px-4 bg-white rounded-lg placeholder-gray-400 text-gray-900 appearance-none inline-block w-full border border-gray-400 transition focus:outline-none focus:ring-1 focus:ring-blue-600"
               />
             </div>
-            <div class="contact-form-group mb-6">
+            <div class="contact-form-group mb-6 relative">
               <p class="font-semibold mb-2">Meeting goal:</p>
               <input
                 id="goal"
+                v-model="form.goal"
                 type="text"
                 required
                 class="py-2 px-4 bg-white rounded-lg placeholder-gray-400 text-gray-900 appearance-none inline-block w-full border border-gray-400 transition focus:outline-none focus:ring-1 focus:ring-blue-600"
+                @focus="visibleSuggestion = true"
               />
+              <div
+                v-show="visibleSuggestion"
+                class="suggestion absolute border border-gray-200 rounded-lg mt-2 py-2 text-gray-900 bg-white shadow-xl w-full inset-x-0 z-10"
+              >
+                <span
+                  v-for="suggest in suggestions"
+                  :key="suggest"
+                  class="hover:bg-blue-400 hover:text-white transition-all z-10 text-left block px-4 py-1"
+                  @click="onSelectSuggest(suggest)"
+                  >{{ suggest }}</span
+                >
+              </div>
             </div>
             <div class="contact-form-group mb-6">
               <p class="font-semibold mb-2">Start time:</p>
               <div class="flex-shrink w-full inline-block relative">
                 <select
+                  v-model="form.start"
                   class="block appearance-none text-gray-600 w-full bg-white border border-gray-400 shadow-inner px-4 py-2 pr-8 rounded"
                 >
                   <option>Please choose one...</option>
-                  <option>English</option>
-                  <option>France</option>
-                  <option>Spanish</option>
+                  <option v-for="(time, index) in timeItems" :key="index" :value="time.value">{{
+                    time.label
+                  }}</option>
                 </select>
                 <div
                   class="pointer-events-none absolute top-0 mt-3  right-0 flex items-center px-2 text-gray-600"
@@ -66,12 +77,13 @@
               <p class="font-semibold mb-2">End time:</p>
               <div class="flex-shrink w-full inline-block relative">
                 <select
+                  v-model="form.end"
                   class="block appearance-none text-gray-600 w-full bg-white border border-gray-400 shadow-inner px-4 py-2 pr-8 rounded"
                 >
                   <option>Please choose one...</option>
-                  <option>English</option>
-                  <option>France</option>
-                  <option>Spanish</option>
+                  <option v-for="(time, index) in timeItems" :key="index" :value="time.value">{{
+                    time.label
+                  }}</option>
                 </select>
                 <div
                   class="pointer-events-none absolute top-0 mt-3  right-0 flex items-center px-2 text-gray-600"
@@ -90,11 +102,15 @@
             </div>
           </form>
         </div>
+        <p class="text-red-500">{{ errorMessage }}</p>
         <div class="text-center md:text-right mt-4 md:flex md:justify-end">
           <button
-            class="block w-full md:inline-block md:w-auto px-4 py-3 md:py-2 bg-blue-500 text-white rounded-lg font-bold text-sm md:ml-2 md:order-2"
-            >Complete</button
+            class="flex justify-center px-4 w-24 h-10 md:py-2 bg-blue-500 text-white rounded-lg font-bold text-sm md:ml-2 md:order-2 focus:outline-none"
+            @click.prevent="onSubmit"
           >
+            <Spinner v-show="isLoading" />
+            <span v-show="!isLoading">Complete</span>
+          </button>
           <button
             class="block w-full md:inline-block md:w-auto px-4 py-3 md:py-2 bg-gray-200 rounded-lg font-semibold text-sm mt-4
           md:mt-0 md:order-1"
@@ -108,8 +124,67 @@
 </template>
 
 <script>
+import Spinner from '@/components/Spinner'
+
+const parseTime = function(time) {
+  const values = (time || '').split(':')
+  if (values.length >= 2) {
+    const hours = parseInt(values[0], 10)
+    const minutes = parseInt(values[1], 10)
+
+    return {
+      hours,
+      minutes,
+    }
+  }
+  /* istanbul ignore next */
+  return null
+}
+
+const compareTime = function(time1, time2) {
+  const value1 = parseTime(time1)
+  const value2 = parseTime(time2)
+
+  const minutes1 = value1.minutes + value1.hours * 60
+  const minutes2 = value2.minutes + value2.hours * 60
+
+  if (minutes1 === minutes2) {
+    return 0
+  }
+
+  return minutes1 > minutes2 ? 1 : -1
+}
+
+const formatTime = function(time) {
+  return (
+    (time.hours < 10 ? '0' + time.hours : time.hours) +
+    ':' +
+    (time.minutes < 10 ? '0' + time.minutes : time.minutes)
+  )
+}
+
+const nextTime = function(time, step) {
+  const timeValue = parseTime(time)
+  const stepValue = parseTime(step)
+
+  const next = {
+    hours: timeValue.hours,
+    minutes: timeValue.minutes,
+  }
+
+  next.minutes += stepValue.minutes
+  next.hours += stepValue.hours
+
+  next.hours += Math.floor(next.minutes / 60)
+  next.minutes = next.minutes % 60
+
+  return formatTime(next)
+}
 export default {
   name: 'ModalCreate',
+  components: {
+    Spinner,
+  },
   props: {
     visible: {
       type: Boolean,
@@ -120,9 +195,87 @@ export default {
       default: 0,
     },
   },
+  data() {
+    return {
+      isLoading: false,
+      start: '08:00',
+      end: '19:30',
+      step: '00:30',
+      visibleSuggestion: false,
+      suggestions: [
+        'Grooming meeting',
+        'Planing meeting',
+        'OKR meeting',
+        'Interview',
+        '1 on 1',
+        'Other',
+      ],
+      form: {
+        token:
+          '2337620625.1636668251329.22f91c789195ea7707dc5afbc31245c060137303b6322eabd26a6c1dee0dae80',
+        room_id: this.roomId || 0,
+        start: '',
+        end: '',
+        goal: '',
+      },
+      errorMessage: '',
+    }
+  },
+  computed: {
+    timeItems() {
+      const start = this.start
+      const end = this.end
+      const step = this.step
+
+      const result = []
+
+      if (start && end && step) {
+        let current = start
+        let i = 16
+        while (compareTime(current, end) <= 0) {
+          result.push({
+            value: i++,
+            label: current,
+            disabled:
+              compareTime(current, this.minTime || '-1:-1') <= 0 ||
+              compareTime(current, this.maxTime || '100:100') >= 0,
+          })
+          current = nextTime(current, step)
+        }
+      }
+
+      return result
+    },
+  },
   methods: {
     onClose() {
       this.$emit('update:visible', !this.visible)
+    },
+    onSelectSuggest(value) {
+      this.form.goal = value
+      this.visibleSuggestion = false
+    },
+    onSubmit() {
+      this.isLoading = true
+      fetch('https://booking.congcu.org/api/booking.php', {
+        method: 'post',
+        body: JSON.stringify(this.form),
+      })
+        .then(async (response) => {
+          const result = await response.json()
+          if (result) {
+            this.isLoading = false
+            this.$emit('booking-successfully')
+            this.onClose()
+          } else {
+            this.isLoading = false
+            this.errorMessage = result.message
+          }
+        })
+        .catch((error) => {
+          this.isLoading = false
+          throw error
+        })
     },
   },
 }
@@ -141,5 +294,29 @@ export default {
   width: 100%;
   height: 100%;
   background-color: rgba(66, 66, 66, 0.08);
+}
+
+.loader {
+  border-top-color: #3498db;
+  -webkit-animation: spinner 1.5s linear infinite;
+  animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
