@@ -8,21 +8,11 @@
         class="bg-white rounded-lg w-full md:max-w-screen-sm md:mx-auto p-8 fixed inset-x-0 bottom-0 z-50 mb-4 mx-4 md:relative"
       >
         <h2 class="text-center font-semibold text-2xl mb-6"
-          >Complete booking meeting room -
-          {{ roomId !== 0 ? roomId + 3 + 'th Floor' : roomId + 3 + 'rd Floor' }}
+          >Booking meeting room -
+          {{ roomId !== 0 ? roomId + 2 + 'th Floor' : roomId + 2 + 'rd Floor' }}
         </h2>
         <div class="md:flex items-center">
-          <form class="contact-form w-full" autocomplete="off" @submit.prevent="onSubmit"
-            ><div class="contact-form-group mb-6">
-              <p class="font-semibold mb-2">Your name:</p>
-              <input
-                id="name"
-                v-model="form.token"
-                type="text"
-                required
-                class="py-2 px-4 bg-white rounded-lg placeholder-gray-400 text-gray-900 appearance-none inline-block w-full border border-gray-400 transition focus:outline-none focus:ring-1 focus:ring-blue-600"
-              />
-            </div>
+          <form class="contact-form w-full" autocomplete="off" @submit.prevent="onSubmit">
             <div class="contact-form-group mb-6 relative">
               <p class="font-semibold mb-2">Meeting goal:</p>
               <input

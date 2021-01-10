@@ -76,7 +76,7 @@
                     >{{ getTime(item.time_start) }} - {{ getTime(item.time_end) }}
                   </div>
                 </div>
-                <p class="meeting-goal mt-2 mb-3">{{ item.goal }}</p>
+                <p class="meeting-goal mt-2 mb-3 font-medium">{{ item.goal }}</p>
               </div>
             </div>
 
