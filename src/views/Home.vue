@@ -70,20 +70,20 @@
                       class="block rounded-full"
                       :src="`https://picsum.photos/32/32/?random=${itemIndex}`"
                     />
-                    <span class="font-medium ml-2">{{ item.user }}</span>
+                    <span class="font-medium ml-2">{{ item.username }}</span>
                   </div>
                   <div class="time text-white font-medium bg-gray-400 p-2 rounded-lg"
-                    >{{ item.time_start }}:00 - {{ item.time_end }}:00
+                    >{{ getTime(item.time_start) }} - {{ getTime(item.time_end) }}
                   </div>
                 </div>
-                <p class="meeting-goal mt-2 mb-3">Meeting goal</p>
+                <p class="meeting-goal mt-2 mb-3">{{ item.goal }}</p>
               </div>
             </div>
 
             <footer class="flex items-center leading-none p-2 md:p-4">
               <button
                 class="bg-blue-500 text-white font-medium p-3 rounded-lg w-full"
-                @click="onClick(index)"
+                @click="onClick(listMeeting.id)"
                 >Booking</button
               >
             </footer>
@@ -94,7 +94,7 @@
     <ModalCreate
       v-if="visible"
       :visible.sync="visible"
-      :room-id="floor"
+      :room-id="Number(floor)"
       @booking-successfully="fetch()"
     />
   </div>
@@ -102,6 +102,7 @@
 
 <script>
 import ModalCreate from '../components/ModalCreate'
+import { listTime } from '@/utils'
 
 export default {
   name: 'Home',
@@ -114,6 +115,7 @@ export default {
       floor: 0,
       listMeetings: [],
       fetching: true,
+      time: [],
     }
   },
   computed: {
@@ -136,6 +138,7 @@ export default {
     },
   },
   created() {
+    this.time = listTime('00:00', '23:30', '00:30', 0)
     this.fetch()
   },
   methods: {
@@ -153,6 +156,11 @@ export default {
     onClick(value) {
       this.visible = true
       this.floor = value
+    },
+    getTime(value) {
+      const time = this.time.find((item) => item.value === Number(value))
+
+      return time.label
     },
   },
 }
