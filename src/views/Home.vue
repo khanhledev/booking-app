@@ -77,6 +77,13 @@
                   </div>
                 </div>
                 <p class="meeting-goal mt-2 mb-3 font-medium">{{ item.goal }}</p>
+                <div v-if="item.can_delete" class="flex justify-end mb-3">
+                  <button
+                    class="bg-red-400 py-1 px-4 rounded text-white font-medium"
+                    @click="handleCancel(item.id)"
+                    >Cancel</button
+                  >
+                </div>
               </div>
             </div>
 
@@ -97,26 +104,36 @@
       :room-id="Number(floor)"
       @booking-successfully="fetch()"
     />
+    <ModalRemove
+      v-if="visibleModalRemove"
+      :id="Number(bookingID)"
+      :visible.sync="visibleModalRemove"
+      @cancel-successfully="fetch()"
+    />
   </div>
 </template>
 
 <script>
 import ModalCreate from '../components/ModalCreate'
+import ModalRemove from '../components/ModalRemove'
 import { listTime } from '@/utils'
 
 export default {
   name: 'Home',
   components: {
     ModalCreate,
+    ModalRemove,
   },
   data() {
     return {
       visible: false,
+      visibleModalRemove: false,
       floor: 0,
       listMeetings: [],
       fetching: true,
       time: [],
       token: '',
+      bookingID: 0,
     }
   },
   computed: {
@@ -173,6 +190,10 @@ export default {
       const time = this.time.find((item) => item.value === Number(value))
 
       return time.label
+    },
+    handleCancel(id) {
+      this.visibleModalRemove = true
+      this.bookingID = id
     },
   },
 }
