@@ -77,6 +77,13 @@
                   </div>
                 </div>
                 <p class="meeting-goal mt-2 mb-3 font-medium">{{ item.goal }}</p>
+                <div v-if="item.can_delete" class="flex justify-end mb-3">
+                  <button
+                    class="bg-red-400 py-1 px-4 rounded text-white font-medium"
+                    @click="handleCancel(item.id)"
+                    >Cancel</button
+                  >
+                </div>
               </div>
             </div>
 
@@ -84,8 +91,8 @@
               <button
                 class="bg-blue-500 text-white font-medium p-3 rounded-lg w-full"
                 @click="onClick(listMeeting.id)"
-                >Booking</button
-              >
+                >Booking
+              </button>
             </footer>
           </article>
         </div>
@@ -97,25 +104,36 @@
       :room-id="Number(floor)"
       @booking-successfully="fetch()"
     />
+    <ModalRemove
+      v-if="visibleModalRemove"
+      :id="Number(bookingID)"
+      :visible.sync="visibleModalRemove"
+      @cancel-successfully="fetch()"
+    />
   </div>
 </template>
 
 <script>
 import ModalCreate from '../components/ModalCreate'
+import ModalRemove from '../components/ModalRemove'
 import { listTime } from '@/utils'
 
 export default {
   name: 'Home',
   components: {
     ModalCreate,
+    ModalRemove,
   },
   data() {
     return {
       visible: false,
+      visibleModalRemove: false,
       floor: 0,
       listMeetings: [],
       fetching: true,
       time: [],
+      token: '',
+      bookingID: 0,
     }
   },
   computed: {
@@ -141,16 +159,27 @@ export default {
     this.time = listTime('00:00', '23:30', '00:30', 0)
     this.fetch()
   },
+  beforeCreate() {
+    let token = localStorage.getItem('booking-token')
+
+    if (!token) {
+      this.$router.push({ path: '/' })
+      return
+    }
+
+    localStorage.setItem('booking-token', token)
+  },
   methods: {
     async fetch() {
       this.fetching = true
-      await fetch(
-        'https://booking.congcu.org/api/room.php?type=list&token=2337620625.1636668251329.22f91c789195ea7707dc5afbc31245c060137303b6322eabd26a6c1dee0dae80'
-      ).then((response) => {
-        response.json().then((data) => {
-          this.listMeetings = data.data
-        })
-      })
+      const token = localStorage.getItem('booking-token')
+      await fetch(`https://booking.congcu.org/api/room.php?type=list&token=${token}`).then(
+        (response) => {
+          response.json().then((data) => {
+            this.listMeetings = data.data
+          })
+        }
+      )
       this.fetching = false
     },
     onClick(value) {
@@ -161,6 +190,10 @@ export default {
       const time = this.time.find((item) => item.value === Number(value))
 
       return time.label
+    },
+    handleCancel(id) {
+      this.visibleModalRemove = true
+      this.bookingID = id
     },
   },
 }
