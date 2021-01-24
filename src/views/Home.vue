@@ -1,122 +1,402 @@
 <template>
-  <div v-if="!fetching" class="container my-12 mx-auto px-4 body-font md:px-12">
-    <h1 class="text-center font-bold text-5xl mb-8">OCG - Booking Meeting Room</h1>
-    <p class="text-center font-medium text-xl mb-4">{{ getCurrentDay }}</p>
-    <div class="flex flex-wrap -mx-1 lg:-mx-4">
-      <template v-if="fetching">
-        <div
-          v-for="$cardIndex in 3"
-          :key="$cardIndex"
-          class="my-1 px-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-1/3"
-        >
-          <div class="overflow-hidden rounded-lg shadow-md mb-8 transition hover:shadow-lg">
-            <div class="lg:h-48 bg-gray-400 md:h-36 w-full object-cover object-center"></div>
-            <h2
-              class="bg-gray-300 animate-pulse w-1/4 mx-auto my-4 leading-tight p-2 md:p-4 rounded"
-            ></h2>
-            <div class="p-x2 md:px-4">
-              <div v-for="index in 3" :key="index" class="list-item-loading mb-2 md:mb-4 border-b">
-                <div class="flex justify-between items-center">
-                  <p
-                    class="leading-relaxed mb-3 w-8 h-8 rounded-full animate-pulse bg-gray-300"
-                  ></p>
-                  <p class="leading-relaxed mb-3 w-1/3 h-3 rounded animate-pulse bg-gray-300"></p>
+  <div class="container">
+    <!--Start nav-->
+    <div class="row">
+      <div class="header">
+        <h1 class="text-center"><span id="nav_text"></span></h1>
+      </div>
+    </div>
+    <div class="row text-center" style="margin-top: 20px">
+      <h1
+        >Hệ thống đặt phòng họp <img src="../assets/logo.png" style="width: 5%" alt="OCG-logo"
+      /></h1>
+    </div>
+    <!--End nav-->
+
+    <!--Start body-->
+    <div class="row" style="margin-top: 10px">
+      <div class="panel panel-primary panel-transparent" style="overflow-x: scroll;">
+        <div class="panel-heading panel-transparent">
+          <i class="glyphicon glyphicon-home"> </i>
+          <span class="mp-menu-text"> Đặt phòng theo cách của bạn</span>
+        </div>
+        <div class="panel-body panel-transparent">
+          <div class="col-md-12 text-center">
+            <button
+              style="margin-bottom: 5px"
+              type="button"
+              class="btn btn-success"
+              data-toggle="modal"
+              data-target="#myModal"
+              >Đặt ngay</button
+            >
+          </div>
+          <table
+            class="table table-bordered"
+            style="/* table-layout: fixed; *//* overflow: hidden; *//* overflow-x: auto; */"
+          >
+            <thead>
+              <tr>
+                <th v-for="item in weeknames" :key="item.date" scope="col">
+                  <p>{{ item.name }}</p>
+                  <p class="text-success">({{ item.date }})</p>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td v-for="bookItem in bookings" :key="bookItem.week_name">
+                  <div
+                    v-for="itemItem in bookItem.list"
+                    :key="itemItem.id"
+                    class="btn btn-primary"
+                    style="display: block; margin: 2px"
+                    data-toggle="modal"
+                    data-target="#modalBookingInfo"
+                    @click="changeCurrentItem(itemItem)"
+                  >
+                    <p class="label label-danger">{{ itemItem.room_name }}</p>
+                    <p class="label label-success">{{ itemItem.username }}</p>
+                    <p
+                      style="max-width: 180px; text-overflow: ellipsis;white-space: normal; margin: 0 auto;"
+                      >{{ itemItem.goal }}</p
+                    >
+                    <p>{{ getTime(itemItem.start) }} - {{ getTime(itemItem.end) }}</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!--End body-->
+
+    <div id="myModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+              ><span aria-hidden="true">&times;</span></button
+            >
+            <h4 id="myModalLabel" class="modal-title">Book phòng</h4>
+          </div>
+          <div class="modal-body">
+            <h3 v-if="message.length > 0" class="text-danger text-center" style="margin: 2%">{{
+              message
+            }}</h3>
+            <form class="form-horizontal" @submit.prevent>
+              <div class="form-group">
+                <label for="book_date" class="col-sm-3 control-label"
+                  >Chọn ngày <span class="text-danger">(*)</span></label
+                >
+                <div class="col-sm-9">
+                  <input
+                    id="book_date"
+                    v-model="form.date"
+                    type="date"
+                    class="form-control"
+                    placeholder="Chọn ngày"
+                    @change="getBookingByDate"
+                  />
                 </div>
-                <h1 class="w-2/3 mb-4 h-3 animate-pulse rounded bg-gray-300"></h1>
               </div>
-              <button
-                class="bg-blue-300 w-full h-8 animate-pulse mt-2 rounded-lg p-x2 md:px-4 md:mb-4"
-              >
-              </button>
-            </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label"
+                  >Giờ bắt đầu <span class="text-danger">(*)</span></label
+                >
+                <div class="col-sm-9">
+                  <select
+                    id="book_start"
+                    v-model="form.start"
+                    class="form-control"
+                    @change="getAvailableRooms"
+                  >
+                    <option v-for="(time, index) in timeList" :key="index" :value="time.value">{{
+                      time.label
+                    }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_end" class="col-sm-3 control-label"
+                  >Giờ kết thúc <span class="text-danger">(*)</span></label
+                >
+                <div class="col-sm-9">
+                  <select
+                    id="book_end"
+                    v-model="form.end"
+                    class="form-control"
+                    @change="getAvailableRooms"
+                  >
+                    <option v-for="(time, index) in timeListEnd" :key="index" :value="time.value">{{
+                      time.label
+                    }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label"
+                  >Chọn phòng <span class="text-danger">(*)</span></label
+                >
+                <div class="col-sm-9">
+                  <button
+                    v-for="(item, index) in availableRooms"
+                    :key="index"
+                    type="submit"
+                    style="margin: 0 2px;"
+                    :disabled="item.disabled"
+                    :class="{
+                      'btn btn-success': form.room_id === item.id,
+                      'btn btn-default': form.room_id !== item.id,
+                    }"
+                    @click="form.room_id = item.id"
+                    >{{ item.name }}</button
+                  >
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label">Mục đích</label>
+                <div class="col-sm-9">
+                  <textarea v-model="form.goal" class="form-control" rows="3"></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Hủy</button>
+            <button type="button" class="btn btn-primary" @click="bookRoom">Đặt phòng</button>
           </div>
         </div>
-      </template>
-      <template v-else>
-        <div
-          v-for="(listMeeting, index) in listMeetings"
-          :key="index"
-          class="my-1 px-1 w-full md:w-1/2 lg:my-4 lg:px-4 lg:w-1/3"
-        >
-          <article class="overflow-hidden rounded-lg shadow-md mb-8 transition hover:shadow-lg">
-            <div class="card-image bg-gray-200">
-              <img
-                alt="Placeholder"
-                class="block h-auto w-full"
-                :src="`https://picsum.photos/600/400/?random=${index}`"
-              />
-            </div>
-
-            <header class="flex items-center justify-center leading-tight p-2 md:p-4">
-              <h1 class="text-lg text-black font-bold">
-                {{ index !== 0 ? index + 3 + 'th Floor' : index + 3 + 'rd Floor' }}
-              </h1>
-            </header>
-
-            <div class="list p-x2 md:px-4">
-              <div v-if="listMeeting.list.length === 0" class="mx-auto max-width-empty-state">
-                <img src="https://tailwindcomponents.com/svg/undraw_no_data_qbuo.svg" alt="" />
-                <p class="text-center mt-4 font-medium">This room has not been booked yet</p>
-              </div>
-              <div
-                v-for="(item, itemIndex) in listMeeting.list"
-                :key="item.id"
-                class="list-item mb-2 md:mb-4 border-b"
-              >
-                <div class="flex justify-between items-center">
-                  <div class="owner flex items-center">
-                    <img
-                      alt="Placeholder"
-                      class="block rounded-full"
-                      :src="`https://picsum.photos/32/32/?random=${itemIndex}`"
-                    />
-                    <span class="font-medium ml-2">{{ item.username }}</span>
-                  </div>
-                  <div class="time text-white font-medium bg-gray-400 p-2 rounded-lg"
-                    >{{ getTime(item.time_start) }} - {{ getTime(item.time_end) }}
-                  </div>
-                </div>
-                <p class="meeting-goal mt-2 mb-3 font-medium">{{ item.goal }}</p>
-              </div>
-            </div>
-
-            <footer class="flex items-center leading-none p-2 md:p-4">
-              <button
-                class="bg-blue-500 text-white font-medium p-3 rounded-lg w-full"
-                @click="onClick(listMeeting.id)"
-                >Booking
-              </button>
-            </footer>
-          </article>
-        </div>
-      </template>
+      </div>
     </div>
-    <ModalCreate
-      v-if="visible"
-      :visible.sync="visible"
-      :room-id="Number(floor)"
-      @booking-successfully="fetch()"
-    />
+
+    <div
+      id="modalBookingInfo"
+      class="modal fade"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="booking info"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
+              ><span aria-hidden="true">&times;</span></button
+            >
+            <h4 class="modal-title">Thông tin book phòng</h4>
+          </div>
+          <div class="modal-body">
+            <form class="form-horizontal" @submit.prevent>
+              <div class="form-group">
+                <label for="book_date" class="col-sm-3 control-label">Người đặt</label>
+                <div class="col-sm-9">
+                  <input v-model="currentItem.username" class="form-control" disabled />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_date" class="col-sm-3 control-label">Ngày</label>
+                <div class="col-sm-9">
+                  <input v-model="currentItem.date" class="form-control" disabled />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label">Giờ bắt đầu</label>
+                <div class="col-sm-9">
+                  <input v-model="start" class="form-control" disabled />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_end" class="col-sm-3 control-label">Giờ kết thúc</label>
+                <div class="col-sm-9">
+                  <input v-model="end" class="form-control" disabled />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label">Phòng</label>
+                <div class="col-sm-9">
+                  <input v-model="currentItem.room_name" class="form-control" disabled />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="book_start" class="col-sm-3 control-label">Mục đích</label>
+                <div class="col-sm-9">
+                  <textarea
+                    v-model="currentItem.goal"
+                    disabled
+                    class="form-control"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <!--            <button type="button" class="btn btn-primary" @click="bookRoom"></button>-->
+            <button type="button" class="btn btn-default" data-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Start footer-->
+    <div class="row"></div>
+    <!--End footer-->
   </div>
 </template>
 
 <script>
-import ModalCreate from '../components/ModalCreate'
 import { listTime } from '@/utils'
-
 export default {
   name: 'Home',
-  components: {
-    ModalCreate,
-  },
+  components: {},
   data() {
     return {
-      visible: false,
-      floor: 0,
-      listMeetings: [],
-      fetching: true,
-      time: [],
-      token: '',
+      currentItem: {
+        start: 0,
+        end: 0,
+      },
+      message: '',
+      form: {
+        start: 0,
+        end: 0,
+        date: '',
+        room_id: 0,
+        goal: '',
+      },
+      availableRooms: [
+        {
+          name: 'Chọn ngày, giờ sẽ hiện phòng phù hợp',
+          disabled: true,
+        },
+      ],
+      rooms: [],
+      bookings: [],
+      weeknames: [],
+      timeList: [
+        {
+          value: 16,
+          label: '08:00',
+          disabled: false,
+        },
+        {
+          value: 17,
+          label: '08:30',
+          disabled: false,
+        },
+        {
+          value: 18,
+          label: '09:00',
+          disabled: false,
+        },
+        {
+          value: 19,
+          label: '09:30',
+          disabled: false,
+        },
+        {
+          value: 20,
+          label: '10:00',
+          disabled: false,
+        },
+        {
+          value: 21,
+          label: '10:30',
+          disabled: false,
+        },
+        {
+          value: 22,
+          label: '11:00',
+          disabled: false,
+        },
+        {
+          value: 23,
+          label: '11:30',
+          disabled: false,
+        },
+        {
+          value: 24,
+          label: '12:00',
+          disabled: false,
+        },
+        {
+          value: 25,
+          label: '12:30',
+          disabled: false,
+        },
+        {
+          value: 26,
+          label: '13:00',
+          disabled: false,
+        },
+        {
+          value: 27,
+          label: '13:30',
+          disabled: false,
+        },
+        {
+          value: 28,
+          label: '14:00',
+          disabled: false,
+        },
+        {
+          value: 29,
+          label: '14:30',
+          disabled: false,
+        },
+        {
+          value: 30,
+          label: '15:00',
+          disabled: false,
+        },
+        {
+          value: 31,
+          label: '15:30',
+          disabled: false,
+        },
+        {
+          value: 32,
+          label: '16:00',
+          disabled: false,
+        },
+        {
+          value: 33,
+          label: '16:30',
+          disabled: false,
+        },
+        {
+          value: 34,
+          label: '17:00',
+          disabled: false,
+        },
+        {
+          value: 35,
+          label: '17:30',
+          disabled: false,
+        },
+        {
+          value: 36,
+          label: '18:00',
+          disabled: false,
+        },
+        {
+          value: 37,
+          label: '18:30',
+          disabled: false,
+        },
+        {
+          value: 38,
+          label: '19:00',
+          disabled: false,
+        },
+        {
+          value: 39,
+          label: '19:30',
+          disabled: false,
+        },
+      ],
+      bookedSlots: [],
+      slots: [],
     }
   },
   computed: {
@@ -137,6 +417,15 @@ export default {
       today = `${dd}/${mm}/${yyyy}`
       return today
     },
+    timeListEnd() {
+      return this.timeList.filter((item) => item.value > this.form.start)
+    },
+    start() {
+      return this.getTime(this.currentItem.start)
+    },
+    end() {
+      return this.getTime(this.currentItem.end)
+    },
   },
   created() {
     this.time = listTime('00:00', '23:30', '00:30', 0)
@@ -153,38 +442,189 @@ export default {
     localStorage.setItem('booking-token', token)
   },
   methods: {
+    changeCurrentItem(item) {
+      this.currentItem = item
+    },
     async fetch() {
       this.fetching = true
       const token = localStorage.getItem('booking-token')
-      await fetch(`https://booking.congcu.org/api/room.php?type=list&token=${token}`).then(
+      await fetch(`https://booking.congcu.org/api/room.php?type=list2&token=${token}`).then(
         (response) => {
           response.json().then((data) => {
-            this.listMeetings = data.data
+            if (!data || !data.data) {
+              return
+            }
+            this.bookings = data.data.bookings
+            this.rooms = data.data.rooms
+            this.weeknames = data.data.weeknames
           })
         }
       )
       this.fetching = false
     },
-    onClick(value) {
-      this.visible = true
-      this.floor = value
-    },
     getTime(value) {
       const time = this.time.find((item) => item.value === Number(value))
 
+      if (!time) {
+        return
+      }
+
       return time.label
+    },
+    bookRoom() {
+      if (this.form.start <= 0) {
+        this.message = 'Chọn giờ bắt đầu'
+        return
+      }
+
+      if (this.form.end <= 0) {
+        this.message = 'Chọn giờ kết thúc'
+        return
+      }
+
+      if (this.form.goal.length === 0) {
+        this.message = 'Nhập vào mục đích'
+        return
+      }
+
+      if (this.form.room_id === 0) {
+        this.message = 'Chọn phòng'
+        return
+      }
+
+      this.form.token = localStorage.getItem('booking-token')
+      fetch('https://booking.congcu.org/api/booking.php', {
+        method: 'post',
+        body: JSON.stringify(this.form),
+      })
+        .then(async (response) => {
+          const result = await response.json()
+          if (result.success) {
+            this.fetch()
+          } else {
+            alert('Book error')
+            // console.log(response)
+          }
+        })
+        .catch((error) => {
+          this.isLoading = false
+          throw error
+        })
+
+      this.resetForm()
+      // eslint-disable-next-line no-undef
+      $(function() {
+        // eslint-disable-next-line no-undef
+        $('#myModal').modal('toggle')
+      })
+    },
+    getAvailableRooms() {
+      if (this.form.start === 0 || this.form.end === 0) {
+        // console.log('Chọn time_start, time_end trước rồi mới tính được')
+        return
+      }
+
+      if (this.slots.length === 0) {
+        // console.log('Slot length empty')
+        return
+      }
+
+      // console.log(JSON.stringify(this.slots))
+      const avail = []
+      this.form.room_id = 0
+
+      for (let i = 0; i < this.rooms.length; i++) {
+        const room = this.rooms[i]
+        const roomId = room.id
+        const roomSlots = this.slots[roomId]
+
+        let isOk = true
+        // console.log('Room: ', room.name, 'Slot now: ', roomSlots)
+        for (let j = this.form.start; j < this.form.end; j++) {
+          // console.log('Slot item: ', roomSlots[j])
+          if (roomSlots[j] === false) {
+            isOk = false
+            break
+          }
+        }
+
+        if (isOk) {
+          avail.push(room)
+        }
+      }
+
+      this.availableRooms = avail
+    },
+    async getBookingByDate() {
+      const token = localStorage.getItem('booking-token')
+      await fetch(
+        `https://booking.congcu.org/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`
+      ).then((response) => {
+        response.json().then((data) => {
+          this.bookedSlots = data.data
+
+          // Make slots
+          let slot = {}
+          for (let i = 0; i < this.rooms.length; i++) {
+            const init = {}
+            for (let j = 0; j <= 48; j++) {
+              init[j] = true
+            }
+
+            slot[this.rooms[i].id] = init
+          }
+
+          // Calc conflicts
+          for (let i = 0; i < this.bookedSlots.length; i++) {
+            const item = this.bookedSlots[i]
+            const roomId = item.room_id
+
+            // console.log('Mark room: ', roomId, 'from: ', item.start, 'to: ', item.end)
+            for (let j = item.start; j <= item.end; j++) {
+              slot[roomId][j] = false
+            }
+          }
+
+          this.slots = slot
+          // console.log(JSON.stringify(slot))
+          this.getAvailableRooms()
+        })
+      })
+      this.fetching = false
+    },
+    resetForm() {
+      this.form = {
+        start: 0,
+        end: 0,
+        date: '',
+        room_id: 0,
+        goal: '',
+      }
     },
   },
 }
 </script>
 
-<style scoped>
-.card-image {
-  min-height: 248px;
-  max-height: 400px;
+<style>
+tr > th {
+  text-align: center;
 }
 
-.max-width-empty-state {
-  max-width: 20rem;
+tr,
+th,
+td {
+  background: transparent;
 }
+
+/*.panel-transparent {*/
+/*  background: none;*/
+/*}*/
+
+/*.panel-transparent .panel-heading {*/
+/*  background: rgba(122, 130, 136, 0.2) !important;*/
+/*}*/
+
+/*.panel-transparent .panel-body {*/
+/*  background: rgba(46, 51, 56, 0.2) !important;*/
+/*}*/
 </style>
