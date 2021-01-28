@@ -3,13 +3,20 @@
     <!--Start nav-->
     <div class="row">
       <div class="header">
-        <h1 class="text-center"><span id="nav_text"></span></h1>
+        <p class="text-right" style="margin-top: 10px"
+          >Xin chào, <strong>{{ currentUser.name }}</strong>
+          <img width="25px" :src="currentUser.avatar" />
+        </p>
+        <p class="text-right" style="margin-top: -15px; margin-right: 30px" @click="logOut"
+          >(<a href>Đăng xuất</a>)
+        </p>
       </div>
     </div>
     <div class="row text-center" style="margin-top: 20px">
-      <h1
-        >Hệ thống đặt phòng họp <img src="../assets/logo.png" style="width: 5%" alt="OCG-logo"
-      /></h1>
+      <h1>
+        Hệ thống đặt phòng họp
+        <img src="../assets/logo.png" style="width: 5%" alt="OCG-logo" />
+      </h1>
     </div>
     <!--End nav-->
 
@@ -23,13 +30,46 @@
         <div class="panel-body panel-transparent">
           <div class="col-md-12 text-center">
             <button
-              style="margin-bottom: 5px"
+              style="margin-bottom: 5px; margin-right: 5px"
               type="button"
               class="btn btn-success"
               data-toggle="modal"
               data-target="#myModal"
-              >Đặt ngay</button
             >
+              Đặt ngay
+            </button>
+
+            <button
+              style="margin-bottom: 5px"
+              type="button"
+              class="btn btn-default"
+              @click="backToToday"
+            >
+              Hôm nay
+            </button>
+          </div>
+
+          <div class="col-md-12 text-center">
+            <button
+              style="margin-bottom: 5px; margin-right: 5px"
+              type="button"
+              class="btn btn-primary"
+              @click="changeWeek('previous')"
+            >
+              «
+            </button>
+            <span
+              >{{ getFormattedDate(currentWeek.start) }} ->
+              {{ getFormattedDate(currentWeek.end) }}</span
+            >
+            <button
+              style="margin-bottom: 5px; margin-left: 5px"
+              type="button"
+              class="btn btn-primary"
+              @click="changeWeek('next')"
+            >
+              »
+            </button>
           </div>
           <table
             class="table table-bordered"
@@ -59,9 +99,13 @@
                     <p class="label label-success">{{ itemItem.username }}</p>
                     <p
                       style="max-width: 180px; text-overflow: ellipsis;white-space: normal; margin: 0 auto;"
-                      >{{ itemItem.goal }}</p
                     >
-                    <p>{{ getTime(itemItem.start) }} - {{ getTime(itemItem.end) }}</p>
+                      {{ itemItem.goal }}
+                    </p>
+                    <p>
+                      {{ getTime(itemItem.start) }} -
+                      {{ getTime(itemItem.end) }}
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -76,15 +120,15 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
-              ><span aria-hidden="true">&times;</span></button
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
             <h4 id="myModalLabel" class="modal-title">Book phòng</h4>
           </div>
           <div class="modal-body">
-            <h3 v-if="message.length > 0" class="text-danger text-center" style="margin: 2%">{{
-              message
-            }}</h3>
+            <h3 v-if="message.length > 0" class="text-danger text-center" style="margin: 2%">
+              {{ message }}
+            </h3>
             <form class="form-horizontal" @submit.prevent>
               <div class="form-group">
                 <label for="book_date" class="col-sm-3 control-label"
@@ -112,9 +156,9 @@
                     class="form-control"
                     @change="getAvailableRooms"
                   >
-                    <option v-for="(time, index) in timeList" :key="index" :value="time.value">{{
-                      time.label
-                    }}</option>
+                    <option v-for="(time, index) in timeList" :key="index" :value="time.value"
+                      >{{ time.label }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -129,9 +173,9 @@
                     class="form-control"
                     @change="getAvailableRooms"
                   >
-                    <option v-for="(time, index) in timeListEnd" :key="index" :value="time.value">{{
-                      time.label
-                    }}</option>
+                    <option v-for="(time, index) in timeListEnd" :key="index" :value="time.value"
+                      >{{ time.label }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -151,12 +195,15 @@
                       'btn btn-default': form.room_id !== item.id,
                     }"
                     @click="form.room_id = item.id"
-                    >{{ item.name }}</button
                   >
+                    {{ item.name }}
+                  </button>
                 </div>
               </div>
               <div class="form-group">
-                <label for="book_start" class="col-sm-3 control-label">Mục đích</label>
+                <label for="book_start" class="col-sm-3 control-label"
+                  >Mục đích<span class="text-danger">(*)</span></label
+                >
                 <div class="col-sm-9">
                   <textarea v-model="form.goal" class="form-control" rows="3"></textarea>
                 </div>
@@ -164,8 +211,12 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Hủy</button>
-            <button type="button" class="btn btn-primary" @click="bookRoom">Đặt phòng</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+              Hủy
+            </button>
+            <button type="button" class="btn btn-primary" @click="bookRoom">
+              Đặt phòng
+            </button>
           </div>
         </div>
       </div>
@@ -181,9 +232,9 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"
-              ><span aria-hidden="true">&times;</span></button
-            >
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
             <h4 class="modal-title">Thông tin book phòng</h4>
           </div>
           <div class="modal-body">
@@ -232,8 +283,16 @@
             </form>
           </div>
           <div class="modal-footer">
-            <!--            <button type="button" class="btn btn-primary" @click="bookRoom"></button>-->
-            <button type="button" class="btn btn-default" data-dismiss="modal">Đóng</button>
+            <button
+              v-if="currentUser.id == currentItem.user_id || currentUser.role == 1"
+              type="button"
+              class="btn btn-danger"
+              @click="deleteBooking"
+              >Hủy lịch</button
+            >
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+              Đóng
+            </button>
           </div>
         </div>
       </div>
@@ -247,6 +306,7 @@
 
 <script>
 import { listTime } from '@/utils'
+
 export default {
   name: 'Home',
   components: {},
@@ -255,6 +315,16 @@ export default {
       currentItem: {
         start: 0,
         end: 0,
+      },
+      currentWeek: {
+        start: new Date(),
+        end: new Date(),
+      },
+      currentUser: {
+        name: 'Noname',
+        avatar: window.location.origin + '/assets/logo.png',
+        role: 0,
+        id: 0,
       },
       message: '',
       form: {
@@ -400,23 +470,6 @@ export default {
     }
   },
   computed: {
-    getCurrentDay() {
-      let today = new Date()
-      let dd = today.getDate()
-      let mm = today.getMonth() + 1
-      const yyyy = today.getFullYear()
-
-      if (dd < 10) {
-        dd = `0${dd}`
-      }
-
-      if (mm < 10) {
-        mm = `0${mm}`
-      }
-
-      today = `${dd}/${mm}/${yyyy}`
-      return today
-    },
     timeListEnd() {
       return this.timeList.filter((item) => item.value > this.form.start)
     },
@@ -428,6 +481,10 @@ export default {
     },
   },
   created() {
+    const { start, end } = this.calculateWeek(new Date())
+
+    this.currentWeek.start = start
+    this.currentWeek.end = end
     this.time = listTime('00:00', '23:30', '00:30', 0)
     this.fetch()
   },
@@ -442,26 +499,104 @@ export default {
     localStorage.setItem('booking-token', token)
   },
   methods: {
+    logOut() {
+      localStorage.removeItem('booking-token')
+      this.$router.push({ path: '/' })
+    },
+    backToToday() {
+      const { start, end } = this.calculateWeek(new Date())
+      this.currentWeek.start = start
+      this.currentWeek.end = end
+      this.fetch()
+    },
+    getFormattedDate(date) {
+      // Format in dd/mm/yyyy
+      let dd = date.getDate()
+      let mm = date.getMonth() + 1
+      const yyyy = date.getFullYear()
+
+      if (dd < 10) {
+        dd = `0${dd}`
+      }
+
+      if (mm < 10) {
+        mm = `0${mm}`
+      }
+
+      return `${dd}/${mm}/${yyyy}`
+    },
+    calculateWeek(date) {
+      const first = date.getDate() - date.getDay()
+      const last = first + 6
+
+      const start = new Date(date.setDate(first))
+      const end = new Date(date.setDate(last))
+
+      return {
+        start: start,
+        end: end,
+      }
+    },
+    formatDate(date) {
+      let d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear()
+
+      if (month.length < 2) month = '0' + month
+      if (day.length < 2) day = '0' + day
+
+      return [year, month, day].join('-')
+    },
     changeCurrentItem(item) {
       this.currentItem = item
     },
+    changeWeek(type) {
+      const date = this.currentWeek.start
+      let newDate
+
+      if (type === 'next') {
+        newDate = date.setDate(date.getDate() + 7)
+      } else {
+        newDate = date.setDate(date.getDate() - 7)
+      }
+
+      const { start, end } = this.calculateWeek(new Date(newDate))
+      this.currentWeek.start = start
+      this.currentWeek.end = end
+      this.fetch()
+    },
     async fetch() {
       this.fetching = true
+      const start = this.formatDate(this.currentWeek.start)
+      const end = this.formatDate(this.currentWeek.end)
       const token = localStorage.getItem('booking-token')
-      await fetch(`https://booking.congcu.org/api/room.php?type=list2&token=${token}`).then(
-        (response) => {
-          response.json().then((data) => {
-            if (!data || !data.data) {
-              return
+      await fetch(
+        `https://booking.congcu.org/api/room.php?type=list2&token=${token}&start_date=${start}&end_date=${end}`
+      ).then((response) => {
+        response.json().then((data) => {
+          if (!data || !data.data) {
+            return
+          }
+          this.bookings = data.data.bookings
+          this.rooms = data.data.rooms
+          this.weeknames = data.data.weeknames
+
+          const user = data.user
+          if (user && user.extraData) {
+            const extraData = JSON.parse(user.extraData)
+            if (extraData && extraData.user && extraData.user.profile) {
+              this.currentUser.avatar = extraData.user.profile.image_24
+              this.currentUser.name = extraData.user.profile.real_name
+              this.currentUser.id = user.id
+              this.currentUser.role = user.role
             }
-            this.bookings = data.data.bookings
-            this.rooms = data.data.rooms
-            this.weeknames = data.data.weeknames
-          })
-        }
-      )
+          }
+        })
+      })
       this.fetching = false
     },
+
     getTime(value) {
       const time = this.time.find((item) => item.value === Number(value))
 
@@ -518,6 +653,34 @@ export default {
         $('#myModal').modal('toggle')
       })
     },
+    deleteBooking() {
+      const token = localStorage.getItem('booking-token')
+      const payload = {
+        token,
+        id: this.currentItem.id,
+      }
+
+      fetch('https://booking.congcu.org/api/delete.php', {
+        method: 'post',
+        body: JSON.stringify(payload),
+      })
+        .then(async (response) => {
+          const result = await response.json()
+          if (result.success) {
+            this.isLoading = false
+            // eslint-disable-next-line no-undef
+            $('#modalBookingInfo').modal('toggle')
+            this.fetch()
+          }
+        })
+        .catch((error) => {
+          alert(JSON.stringify(error))
+        })
+
+      this.resetForm()
+      // eslint-disable-next-line no-undef
+      $('#myModal').modal('hide')
+    },
     getAvailableRooms() {
       if (this.form.start === 0 || this.form.end === 0) {
         // console.log('Chọn time_start, time_end trước rồi mới tính được')
@@ -540,12 +703,17 @@ export default {
 
         let isOk = true
         // console.log('Room: ', room.name, 'Slot now: ', roomSlots)
-        for (let j = this.form.start; j < this.form.end; j++) {
+        for (let j = this.form.start + 1; j < this.form.end; j++) {
           // console.log('Slot item: ', roomSlots[j])
           if (roomSlots[j] === false) {
             isOk = false
             break
           }
+        }
+
+        // handle case cach nhau 30'
+        if (this.form.end - this.form.start === 1 && roomSlots[this.form.start] === false) {
+          isOk = false
         }
 
         if (isOk) {
