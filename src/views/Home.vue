@@ -33,8 +33,7 @@
               style="margin-bottom: 5px; margin-right: 5px"
               type="button"
               class="btn btn-success"
-              data-toggle="modal"
-              data-target="#myModal"
+              @click="showModal('create')"
             >
               Đặt ngay
             </button>
@@ -88,12 +87,10 @@
                 <td v-for="bookItem in bookings" :key="bookItem.week_name">
                   <div
                     v-for="itemItem in bookItem.list"
-                    :key="itemItem.id"
+                    :key="itemItem.booking_id"
                     class="btn btn-primary"
                     style="display: block; margin: 2px"
-                    data-toggle="modal"
-                    data-target="#modalBookingInfo"
-                    @click="changeCurrentItem(itemItem)"
+                    @click="showModal('update', itemItem)"
                   >
                     <p class="label label-danger">{{ itemItem.room_name }}</p>
                     <p class="label label-success">{{ itemItem.username }}</p>
@@ -123,7 +120,7 @@
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
-            <h4 id="myModalLabel" class="modal-title">Book phòng</h4>
+            <h4 id="myModalLabel" class="modal-title">{{ modalTitle }}</h4>
           </div>
           <div class="modal-body">
             <h3 v-if="message.length > 0" class="text-danger text-center" style="margin: 2%">
@@ -132,7 +129,8 @@
             <form class="form-horizontal" @submit.prevent>
               <div class="form-group">
                 <label for="book_date" class="col-sm-3 control-label"
-                  >Chọn ngày <span class="text-danger">(*)</span></label
+                  >Chọn ngày
+                  <span v-if="form.action !== 'update'" class="text-danger">(*)</span></label
                 >
                 <div class="col-sm-9">
                   <input
@@ -141,19 +139,22 @@
                     type="date"
                     class="form-control"
                     placeholder="Chọn ngày"
+                    :disabled="form.action === 'update'"
                     @change="getBookingByDate"
                   />
                 </div>
               </div>
               <div class="form-group">
                 <label for="book_start" class="col-sm-3 control-label"
-                  >Giờ bắt đầu <span class="text-danger">(*)</span></label
+                  >Giờ bắt đầu
+                  <span v-if="form.action !== 'update'" class="text-danger">(*)</span></label
                 >
                 <div class="col-sm-9">
                   <select
                     id="book_start"
                     v-model="form.start"
                     class="form-control"
+                    :disabled="form.action === 'update'"
                     @change="getAvailableRooms"
                   >
                     <option v-for="(time, index) in timeList" :key="index" :value="time.value"
@@ -164,13 +165,15 @@
               </div>
               <div class="form-group">
                 <label for="book_end" class="col-sm-3 control-label"
-                  >Giờ kết thúc <span class="text-danger">(*)</span></label
+                  >Giờ kết thúc
+                  <span v-if="form.action !== 'update'" class="text-danger">(*)</span></label
                 >
                 <div class="col-sm-9">
                   <select
                     id="book_end"
                     v-model="form.end"
                     class="form-control"
+                    :disabled="form.action === 'update'"
                     @change="getAvailableRooms"
                   >
                     <option v-for="(time, index) in timeListEnd" :key="index" :value="time.value"
@@ -181,7 +184,8 @@
               </div>
               <div class="form-group">
                 <label for="book_start" class="col-sm-3 control-label"
-                  >Chọn phòng <span class="text-danger">(*)</span></label
+                  >Chọn phòng
+                  <span v-if="form.action !== 'update'" class="text-danger">(*)</span></label
                 >
                 <div class="col-sm-9">
                   <button
@@ -189,7 +193,7 @@
                     :key="index"
                     type="submit"
                     style="margin: 0 2px;"
-                    :disabled="item.disabled"
+                    :disabled="item.disabled || form.action === 'update'"
                     :class="{
                       'btn btn-success': form.room_id === item.id,
                       'btn btn-default': form.room_id !== item.id,
@@ -211,11 +215,36 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">
-              Hủy
-            </button>
-            <button type="button" class="btn btn-primary" @click="bookRoom">
+            <button
+              v-if="
+                (currentUser.id == currentItem.user_id || currentUser.role == 1) &&
+                  form.action === 'update'
+              "
+              type="button"
+              class="btn btn-danger"
+              @click="deleteBooking"
+              >Hủy lịch</button
+            >
+            <button
+              v-if="
+                (currentUser.id == currentItem.user_id || currentUser.role == 1) &&
+                  form.action === 'update'
+              "
+              type="button"
+              class="btn btn-success"
+              @click="updateBooking"
+              >Cập nhật</button
+            >
+            <button
+              v-if="form.action === 'create'"
+              type="button"
+              class="btn btn-primary"
+              @click="bookRoom"
+            >
               Đặt phòng
+            </button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+              Đóng
             </button>
           </div>
         </div>
@@ -283,13 +312,6 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button
-              v-if="currentUser.id == currentItem.user_id || currentUser.role == 1"
-              type="button"
-              class="btn btn-danger"
-              @click="deleteBooking"
-              >Hủy lịch</button
-            >
             <button type="button" class="btn btn-default" data-dismiss="modal">
               Đóng
             </button>
@@ -328,6 +350,8 @@ export default {
       },
       message: '',
       form: {
+        action: '', // create/update
+        id: 0, // if update -> id > 0
         start: 0,
         end: 0,
         date: '',
@@ -479,6 +503,9 @@ export default {
     end() {
       return this.getTime(this.currentItem.end)
     },
+    modalTitle() {
+      return this.form.action === 'create' ? 'Đặt phòng' : 'Cập nhật nội dung'
+    },
   },
   created() {
     const { start, end } = this.calculateWeek(new Date())
@@ -499,6 +526,44 @@ export default {
     localStorage.setItem('booking-token', token)
   },
   methods: {
+    updateBooking() {
+      // console.log(this.form)
+      if (this.form.id == 0) {
+        alert('Không tìm thấy booking id. Vui lòng thử lại')
+        return
+      }
+
+      if (this.form.goal.length === 0) {
+        this.message = 'Nhập vào mục đích'
+        return
+      }
+
+      this.form.token = localStorage.getItem('booking-token')
+      fetch('https://booking.congcu.org/api/booking.php', {
+        method: 'post',
+        body: JSON.stringify(this.form),
+      })
+        .then(async (response) => {
+          const result = await response.json()
+          if (result.success) {
+            this.fetch()
+          } else {
+            alert('Book error')
+            // console.log(response)
+          }
+        })
+        .catch((error) => {
+          this.isLoading = false
+          throw error
+        })
+
+      this.resetForm()
+      // eslint-disable-next-line no-undef
+      $(function() {
+        // eslint-disable-next-line no-undef
+        $('#myModal').modal('toggle')
+      })
+    },
     logOut() {
       localStorage.removeItem('booking-token')
       this.$router.push({ path: '/' })
@@ -596,6 +661,39 @@ export default {
       })
       this.fetching = false
     },
+    async showModal(type, bookingItem) {
+      this.message = ''
+      this.form.action = type
+      switch (type) {
+        case 'create':
+          this.form.id = 0
+          this.form.room_id = 0
+          this.form.start = 0
+          this.form.end = 0
+          this.form.goal = ''
+          this.availableRooms = [
+            {
+              name: 'Chọn ngày, giờ sẽ hiện phòng phù hợp',
+              disabled: true,
+            },
+          ]
+          break
+        case 'update':
+          this.currentItem = bookingItem
+          this.form.id = bookingItem.booking_id
+          this.form.start = bookingItem.start
+          this.form.end = bookingItem.end
+          this.form.date = bookingItem.date
+          this.availableRooms = this.rooms
+          this.form.room_id = bookingItem.room_id
+          this.form.goal = bookingItem.goal
+          break
+      }
+
+      // console.log(this.form.id)
+      // eslint-disable-next-line no-undef
+      $('#myModal').modal('show')
+    },
 
     getTime(value) {
       const time = this.time.find((item) => item.value === Number(value))
@@ -646,7 +744,7 @@ export default {
           throw error
         })
 
-      this.resetForm()
+      // this.resetForm()
       // eslint-disable-next-line no-undef
       $(function() {
         // eslint-disable-next-line no-undef
@@ -657,7 +755,7 @@ export default {
       const token = localStorage.getItem('booking-token')
       const payload = {
         token,
-        id: this.currentItem.id,
+        id: this.currentItem.booking_id,
       }
 
       fetch('https://booking.congcu.org/api/delete.php', {
@@ -669,7 +767,7 @@ export default {
           if (result.success) {
             this.isLoading = false
             // eslint-disable-next-line no-undef
-            $('#modalBookingInfo').modal('toggle')
+            $('#modalBookingInfo').modal('hide')
             this.fetch()
           }
         })
@@ -677,7 +775,7 @@ export default {
           alert(JSON.stringify(error))
         })
 
-      this.resetForm()
+      // this.resetForm()
       // eslint-disable-next-line no-undef
       $('#myModal').modal('hide')
     },
