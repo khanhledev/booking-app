@@ -223,8 +223,8 @@
               type="button"
               class="btn btn-danger"
               @click="deleteBooking"
-              >Hủy lịch</button
-            >
+              >Hủy lịch
+            </button>
             <button
               v-if="
                 (currentUser.id == currentItem.user_id || currentUser.role == 1) &&
@@ -233,8 +233,8 @@
               type="button"
               class="btn btn-success"
               @click="updateBooking"
-              >Cập nhật</button
-            >
+              >Cập nhật
+            </button>
             <button
               v-if="form.action === 'create'"
               type="button"
@@ -591,11 +591,9 @@ export default {
       return `${dd}/${mm}/${yyyy}`
     },
     calculateWeek(date) {
-      const first = date.getDate() - date.getDay()
-      const last = first + 6
-
-      const start = new Date(date.setDate(first))
-      const end = new Date(date.setDate(last))
+      const current = date.getTime()
+      const start = new Date(new Date(current).setDate(date.getDate() - date.getDay()))
+      const end = new Date(new Date(current).setDate(date.getDate() - date.getDay() + 6))
 
       return {
         start: start,
@@ -617,13 +615,14 @@ export default {
       this.currentItem = item
     },
     changeWeek(type) {
-      const date = this.currentWeek.start
       let newDate
 
       if (type === 'next') {
-        newDate = date.setDate(date.getDate() + 7)
+        newDate = new Date(this.currentWeek.end.getTime()).setDate(
+          this.currentWeek.end.getDate() + 7
+        )
       } else {
-        newDate = date.setDate(date.getDate() - 7)
+        newDate = new Date(this.currentWeek.start).setDate(this.currentWeek.start.getDate() - 7)
       }
 
       const { start, end } = this.calculateWeek(new Date(newDate))
