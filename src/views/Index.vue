@@ -22,7 +22,7 @@ export default {
       return
     }
 
-    await fetch(`https://booking.congcu.org/api/oauth.php?token=${token}`).then((response) => {
+    await fetch(`http://booking.vn/api/oauth.php?token=${token}`).then((response) => {
       response.json().then((data) => {
         if (!data.success) {
           return

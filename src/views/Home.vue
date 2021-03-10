@@ -539,7 +539,7 @@ export default {
       }
 
       this.form.token = localStorage.getItem('booking-token')
-      fetch('https://booking.congcu.org/api/booking.php', {
+      fetch('http://booking.vn/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),
       })
@@ -636,7 +636,7 @@ export default {
       const end = this.formatDate(this.currentWeek.end)
       const token = localStorage.getItem('booking-token')
       await fetch(
-        `https://booking.congcu.org/api/room.php?type=list2&token=${token}&start_date=${start}&end_date=${end}`
+        `http://booking.vn/api/room.php?type=list2&token=${token}&start_date=${start}&end_date=${end}`
       ).then((response) => {
         response.json().then((data) => {
           if (!data || !data.data) {
@@ -725,7 +725,7 @@ export default {
       }
 
       this.form.token = localStorage.getItem('booking-token')
-      fetch('https://booking.congcu.org/api/booking.php', {
+      fetch('http://booking.vn/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),
       })
@@ -757,7 +757,7 @@ export default {
         id: this.currentItem.booking_id,
       }
 
-      fetch('https://booking.congcu.org/api/delete.php', {
+      fetch('http://booking.vn/api/delete.php', {
         method: 'post',
         body: JSON.stringify(payload),
       })
@@ -823,7 +823,7 @@ export default {
     async getBookingByDate() {
       const token = localStorage.getItem('booking-token')
       await fetch(
-        `https://booking.congcu.org/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`
+        `http://booking.vn/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`
       ).then((response) => {
         response.json().then((data) => {
           this.bookedSlots = data.data

@@ -227,7 +227,7 @@
 <!--    async fetch() {-->
 <!--      this.fetching = true-->
 <!--      const token = localStorage.getItem('booking-token')-->
-<!--      await fetch(`https://booking.congcu.org/api/room.php?type=list2&token=${token}`).then(-->
+<!--      await fetch(`http://booking.vn/api/room.php?type=list2&token=${token}`).then(-->
 <!--        (response) => {-->
 <!--          response.json().then((data) => {-->
 <!--            if (!data || !data.data) {-->
@@ -279,7 +279,7 @@
 <!--      }-->
 
 <!--      this.form.token = localStorage.getItem('booking-token')-->
-<!--      fetch('https://booking.congcu.org/api/booking.php', {-->
+<!--      fetch('http://booking.vn/api/booking.php', {-->
 <!--        method: 'post',-->
 <!--        body: JSON.stringify(this.form),-->
 <!--      })-->
@@ -344,7 +344,7 @@
 <!--    async getBookingByDate() {-->
 <!--      const token = localStorage.getItem('booking-token')-->
 <!--      await fetch(-->
-<!--        `https://booking.congcu.org/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`-->
+<!--        `http://booking.vn/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`-->
 <!--      ).then((response) => {-->
 <!--        response.json().then((data) => {-->
 <!--          this.bookedSlots = data.data-->
