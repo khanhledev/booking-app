@@ -172,7 +172,7 @@ export default {
     onSubmit() {
       this.isLoading = true
       this.form.token = localStorage.getItem('booking-token')
-      fetch('http://booking.vn/api/booking.php', {
+      fetch('https://booking.congcu.org/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),
       })

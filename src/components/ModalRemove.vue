@@ -58,7 +58,7 @@ export default {
         token,
         id: this.id,
       }
-      fetch('http://booking.vn/api/delete.php', {
+      fetch('https://booking.congcu.org/api/delete.php', {
         method: 'post',
         body: JSON.stringify(payload),
       })

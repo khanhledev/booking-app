@@ -70,6 +70,24 @@
               »
             </button>
           </div>
+
+          <div class="col-md-12 text-center">
+            <div class="row">
+              <button class="btn btn-success" style="margin-right: 5px" @click="selectedRoomId = 0"
+                >Tất cả</button
+              >
+              <button
+                v-for="item in rooms"
+                :key="item.id"
+                class="btn btn-primary"
+                :class="{ btn: true, 'btn-warning': item.id === selectedRoomId }"
+                style="margin: 10px 5px;"
+                @click="selectedRoomId = item.id"
+                >{{ item.name }}</button
+              >
+            </div>
+          </div>
+
           <table
             class="table table-bordered"
             style="/* table-layout: fixed; *//* overflow: hidden; *//* overflow-x: auto; */"
@@ -84,7 +102,7 @@
             </thead>
             <tbody>
               <tr>
-                <td v-for="bookItem in bookings" :key="bookItem.week_name">
+                <td v-for="bookItem in filteredBookings" :key="bookItem.week_name">
                   <div
                     v-for="itemItem in bookItem.list"
                     :key="itemItem.booking_id"
@@ -334,6 +352,7 @@ export default {
   components: {},
   data() {
     return {
+      selectedRoomId: 0,
       currentItem: {
         start: 0,
         end: 0,
@@ -491,9 +510,34 @@ export default {
       ],
       bookedSlots: [],
       slots: [],
+      markMap: [],
     }
   },
   computed: {
+    filteredBookings() {
+      if (this.selectedRoomId === 0) {
+        return this.bookings
+      }
+
+      const filtered = []
+
+      for (let i = 0; i < this.bookings.length; i++) {
+        const item = Object.assign({}, this.bookings[i])
+        const list = item.list
+        const filteredList = []
+
+        for (let j = 0; j < list.length; j++) {
+          if (list[j].room_id === this.selectedRoomId) {
+            filteredList.push(list[j])
+          }
+        }
+
+        item.list = filteredList
+        filtered.push(item)
+      }
+
+      return filtered
+    },
     timeListEnd() {
       return this.timeList.filter((item) => item.value > this.form.start)
     },
@@ -526,6 +570,9 @@ export default {
     localStorage.setItem('booking-token', token)
   },
   methods: {
+    filterRoom(room) {
+      this.selectedRoomId = room.id
+    },
     updateBooking() {
       // console.log(this.form)
       if (this.form.id == 0) {
@@ -539,7 +586,7 @@ export default {
       }
 
       this.form.token = localStorage.getItem('booking-token')
-      fetch('http://booking.vn/api/booking.php', {
+      fetch('https://booking.congcu.org/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),
       })
@@ -636,7 +683,7 @@ export default {
       const end = this.formatDate(this.currentWeek.end)
       const token = localStorage.getItem('booking-token')
       await fetch(
-        `http://booking.vn/api/room.php?type=list2&token=${token}&start_date=${start}&end_date=${end}`
+        `https://booking.congcu.org/api/room.php?type=list2&token=${token}&start_date=${start}&end_date=${end}`
       ).then((response) => {
         response.json().then((data) => {
           if (!data || !data.data) {
@@ -725,7 +772,7 @@ export default {
       }
 
       this.form.token = localStorage.getItem('booking-token')
-      fetch('http://booking.vn/api/booking.php', {
+      fetch('https://booking.congcu.org/api/booking.php', {
         method: 'post',
         body: JSON.stringify(this.form),
       })
@@ -757,7 +804,7 @@ export default {
         id: this.currentItem.booking_id,
       }
 
-      fetch('http://booking.vn/api/delete.php', {
+      fetch('https://booking.congcu.org/api/delete.php', {
         method: 'post',
         body: JSON.stringify(payload),
       })
@@ -789,7 +836,7 @@ export default {
         return
       }
 
-      // console.log(JSON.stringify(this.slots))
+      console.log('Get avail from: ', this.form.start, ', to: ', this.form.end)
       const avail = []
       this.form.room_id = 0
 
@@ -809,8 +856,42 @@ export default {
         }
 
         // handle case cach nhau 30'
-        if (this.form.end - this.form.start === 1 && roomSlots[this.form.start] === false) {
-          isOk = false
+        console.log(
+          'Mark arr for room: ',
+          roomId,
+          ' now: ',
+          this.markMap[roomId],
+          ' start: ',
+          this.form.start,
+          ', end: ',
+          this.form.end
+        )
+        if (this.form.end - this.form.start === 1) {
+          // && roomSlots[this.form.start] === false
+          // TODO nếu start và end không cùng nằm trong 1 khoảng time nào => ok
+
+          isOk = true
+
+          const roomMarks = this.markMap[roomId]
+          for (let k = 0; k < roomMarks.length; k++) {
+            const itemMarks = roomMarks[k]
+            console.log(
+              'item marks: ',
+              itemMarks,
+              ', start: ',
+              this.form.start,
+              ', end: ',
+              this.form.end
+            )
+            if (
+              itemMarks.includes(this.form.start.toString()) &&
+              itemMarks.includes(this.form.end.toString())
+            ) {
+              console.log('>>>> Oh. Find duplicate dkm')
+              isOk = false
+              break
+            }
+          }
         }
 
         if (isOk) {
@@ -823,13 +904,14 @@ export default {
     async getBookingByDate() {
       const token = localStorage.getItem('booking-token')
       await fetch(
-        `http://booking.vn/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`
+        `https://booking.congcu.org/api/room.php?type=get_by_date&date=${this.form.date}&token=${token}`
       ).then((response) => {
         response.json().then((data) => {
           this.bookedSlots = data.data
 
           // Make slots
           let slot = {}
+          let markArr = {}
           for (let i = 0; i < this.rooms.length; i++) {
             const init = {}
             for (let j = 0; j <= 48; j++) {
@@ -837,6 +919,7 @@ export default {
             }
 
             slot[this.rooms[i].id] = init
+            markArr[this.rooms[i].id] = []
           }
 
           // Calc conflicts
@@ -844,13 +927,29 @@ export default {
             const item = this.bookedSlots[i]
             const roomId = item.room_id
 
-            // console.log('Mark room: ', roomId, 'from: ', item.start, 'to: ', item.end)
+            console.log(
+              'Mark room: ',
+              roomId,
+              'from: ',
+              item.start,
+              this.getTime(item.start),
+              'to: ',
+              item.end,
+              this.getTime(item.end),
+              ', goal: ',
+              item.goal
+            )
+
+            let markItem = []
             for (let j = item.start; j <= item.end; j++) {
               slot[roomId][j] = false
+              markItem.push(j.toString())
             }
+            markArr[roomId].push(markItem)
           }
 
           this.slots = slot
+          this.markMap = markArr
           // console.log(JSON.stringify(slot))
           this.getAvailableRooms()
         })
